@@ -23,18 +23,18 @@ def parse_ports(s):
 
 
 @click.command()
-@click.argument('stack_name')
+@click.argument('stack_names', callback=lambda _, __, val: val.split(','))
 @click.argument('ports')
 @click.argument('jump_host')
 @click.option('--region')
 @click.option('-U', '--user')
-def cli(stack_name, ports, jump_host, region, user):
+def cli(stack_names, ports, jump_host, region, user):
     try:
         portlist = parse_ports(ports)
     except ValueError:
         raise click.UsageError('Could not parse ports: ' + ports)
 
-    senza_cmd = ['senza', 'instances', '--output=json', stack_name]
+    senza_cmd = ['senza', 'instances', '--output=json']
     if region:
         senza_cmd.append('--region=' + region)
     out = subprocess.check_output(senza_cmd)
@@ -43,9 +43,9 @@ def cli(stack_name, ports, jump_host, region, user):
     opts = []
     endpoints = []
     for row in data:
-        if row['state'] == 'RUNNING':
+        if row['stack_name'] in stack_names and row['state'] == 'RUNNING':
             ip = row['private_ip']
-            with Action('Adding IP {}..'.format(ip)):
+            with Action('Adding IP {} from {}..'.format(ip, row['stack_name'])):
                 subprocess.call(add_if(ip))
                 hostname = 'ip-{}.{}.compute.internal'.format(ip.replace('.', '-'), region)
                 subprocess.call(add_hosts(ip, hostname))
@@ -54,7 +54,7 @@ def cli(stack_name, ports, jump_host, region, user):
                     endpoints.append('{}:{}'.format(ip, port))
 
     if not endpoints:
-        raise click.UsageError('No instances for Senza stack "{}" found.'.format(stack_name))
+        raise click.UsageError('No instances for Senza stack(s) "{}" found.'.format(stack_names))
 
     click.secho('Endpoints: {}'.format(','.join(endpoints)), bold=True, fg='blue')
 

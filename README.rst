@@ -18,6 +18,13 @@ Cluster nodes can be accessed directly from your local machine.
 
     $ tunnels my-senza-stack 9092 odd-eu-central-1.myteam.example.org --region eu-central-1
 
+Multiple clusters can be connected to at once by giving a comma separated list
+of stack names
+
+.. code-block:: bash
+
+    $ tunnels my-senza-stack1,my-senza-stack2 9092 odd-eu-central-1.myteam.example.org --region eu-central-1
+
 Installation
 ============
 
